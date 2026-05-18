@@ -152,17 +152,27 @@ renderer.setClearColor(0x000000, 0);
 slider.prepend(renderer.domElement);
 
 const textureLoader = new THREE.TextureLoader();
-const textures = [];
+const textures = new Array(slides.length).fill(null);
 
-for (const slide of slides) {
-  const texture = await new Promise((resolve) =>
-    textureLoader.load(slide.image, resolve),
+function loadTexture(index) {
+  return new Promise((resolve) =>
+    textureLoader.load(slides[index].image, (texture) => {
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      textures[index] = texture;
+      resolve(texture);
+    }),
   );
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  textures.push(texture);
+}
+
+// 最初の2枚を並列ロードしてから描画開始
+await Promise.all([loadTexture(0), loadTexture(1)]);
+
+// 残りをバックグラウンドで並列ロード
+for (let i = 2; i < slides.length; i++) {
+  loadTexture(i);
 }
 
 const rippleConfig = {
@@ -244,6 +254,10 @@ gsap.fromTo(
 
 function transition() {
   if (isTransitioning) return;
+
+  const nextIndex = (currentIndex + 1) % slides.length;
+  if (!textures[nextIndex]) return;
+
   isTransitioning = true;
 
   transitionGen++;
@@ -254,8 +268,6 @@ function transition() {
     uniforms.uProgress.value = 0.0;
     rippleTween = null;
   }
-
-  const nextIndex = (currentIndex + 1) % slides.length;
   const currentSlide = document.querySelector(".slide-content");
 
   const charsToAnimate = currentChars;

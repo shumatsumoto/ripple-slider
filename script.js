@@ -9,8 +9,52 @@ gsap.registerPlugin(SplitText);
 let currentIndex = 0;
 let isTransitioning = false;
 let rippleTween = null;
+let currentChars = [];
+let currentLines = [];
+let transitionGen = 0;
 
 const slider = document.querySelector(".slider");
+
+// Custom cursor
+const cursor = document.querySelector(".cursor");
+let cursorVisible = false;
+gsap.set(cursor, { xPercent: -50, yPercent: -50 });
+
+document.addEventListener("mousemove", (e) => {
+  gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1, ease: "none", overwrite: "auto" });
+  if (!cursorVisible) {
+    cursorVisible = true;
+    gsap.to(cursor, { opacity: 1, duration: 0.4 });
+  }
+});
+
+slider.addEventListener("mouseenter", () => cursor.classList.add("expanded"));
+slider.addEventListener("mouseleave", () => cursor.classList.remove("expanded"));
+
+// Slide counter
+const counterCurrent = document.querySelector(".counter-current");
+const counterTotal = document.querySelector(".counter-total");
+counterTotal.textContent = String(slides.length).padStart(2, "0");
+
+function updateCounter(index) {
+  gsap.to(counterCurrent, {
+    opacity: 0,
+    y: -8,
+    duration: 0.2,
+    ease: "power2.in",
+    onComplete() {
+      counterCurrent.textContent = String(index + 1).padStart(2, "0");
+      gsap.fromTo(counterCurrent, { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.2, ease: "power2.out" });
+    },
+  });
+}
+
+// Click hint — auto-fade after 4s
+const clickHint = document.querySelector(".click-hint");
+if (window.matchMedia("(pointer: coarse)").matches) {
+  clickHint.textContent = "Tap anywhere";
+}
+gsap.to(clickHint, { opacity: 0, duration: 0.8, delay: 4, overwrite: "auto" });
 
 function splitTitle(container) {
   const heading = container.querySelector(".slide-title h1");
@@ -55,19 +99,13 @@ function buildSlideContent(slide) {
   return el;
 }
 
-function animateTextOut(container) {
-  const titleSplit = splitTitle(container);
-  const lines = splitDescription(container);
+function animateTextOut(chars, lines) {
+  gsap.killTweensOf([...chars, ...lines]);
 
   const tl = gsap.timeline();
 
-  if (titleSplit) {
-    tl.to(titleSplit.chars, {
-      y: "-100%",
-      duration: 0.6,
-      stagger: 0.02,
-      ease: "power2.inOut",
-    });
+  if (chars.length) {
+    tl.to(chars, { y: "-100%", duration: 0.6, stagger: 0.02, ease: "power2.inOut" });
   }
 
   tl.to(
@@ -83,21 +121,22 @@ function animateTextIn(container) {
   const titleSplit = splitTitle(container);
   const lines = splitDescription(container);
 
-  const chars = titleSplit ? titleSplit.chars : [];
+  currentChars = titleSplit ? titleSplit.chars : [];
+  currentLines = lines;
 
-  gsap.set([chars, lines], { y: "100%" });
+  gsap.set([currentChars, currentLines], { y: "100%" });
   gsap.set(container, { opacity: 1 });
 
   return gsap
     .timeline()
-    .to(chars, {
+    .to(currentChars, {
       y: "0%",
       duration: 0.5,
       stagger: 0.02,
       ease: "power2.inOut",
     })
     .to(
-      lines,
+      currentLines,
       { y: "0%", duration: 0.5, stagger: 0.05, ease: "power2.out" },
       0.1,
     );
@@ -188,14 +227,17 @@ const initialSlide = document.querySelector(".slide-content");
 const initialTitle = splitTitle(initialSlide);
 const initialLines = splitDescription(initialSlide);
 
+currentChars = initialTitle.chars;
+currentLines = initialLines;
+
 gsap.fromTo(
-  initialTitle.chars,
+  currentChars,
   { y: "100%" },
   { y: "0%", duration: 0.8, stagger: 0.025, ease: "power2.out" },
 );
 
 gsap.fromTo(
-  initialLines,
+  currentLines,
   { y: "100%" },
   { y: "0%", duration: 0.8, stagger: 0.025, ease: "power2.out", delay: 0.2 },
 );
@@ -203,6 +245,9 @@ gsap.fromTo(
 function transition() {
   if (isTransitioning) return;
   isTransitioning = true;
+
+  transitionGen++;
+  const myGen = transitionGen;
 
   if (rippleTween) {
     rippleTween.kill();
@@ -213,7 +258,12 @@ function transition() {
   const nextIndex = (currentIndex + 1) % slides.length;
   const currentSlide = document.querySelector(".slide-content");
 
-  const exitTimeline = animateTextOut(currentSlide);
+  const charsToAnimate = currentChars;
+  const linesToAnimate = currentLines;
+  currentChars = [];
+  currentLines = [];
+
+  const exitTimeline = animateTextOut(charsToAnimate, linesToAnimate);
 
   uniforms.uTexCurrent.value = textures[currentIndex];
   uniforms.uTexNext.value = textures[nextIndex];
@@ -251,8 +301,11 @@ function transition() {
   exitTimeline.then(() => {
     currentSlide.remove();
 
+    if (myGen !== transitionGen) return;
+
     const nextSlide = buildSlideContent(slides[nextIndex]);
     slider.appendChild(nextSlide);
+    updateCounter(nextIndex);
 
     requestAnimationFrame(() => {
       animateTextIn(nextSlide);

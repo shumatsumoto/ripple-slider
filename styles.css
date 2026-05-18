@@ -6,6 +6,28 @@
 
 body {
   font-family: "PP Neue Montreal", sans-serif;
+  cursor: none;
+}
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: width 0.3s ease, height 0.3s ease;
+  will-change: transform;
+}
+
+.cursor.expanded {
+  width: 44px;
+  height: 44px;
 }
 
 h1 {
@@ -68,6 +90,71 @@ p {
   z-index: 2;
 }
 
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.slider:hover .vignette {
+  opacity: 1;
+}
+
+.slide-counter {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 3rem;
+  color: white;
+  mix-blend-mode: difference;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.counter-current {
+  display: inline-block;
+}
+
+.click-hint {
+  position: absolute;
+  bottom: 2.5rem;
+  right: 3rem;
+  color: white;
+  mix-blend-mode: difference;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  animation: clickHintPulse 2s ease-in-out infinite;
+}
+
+.click-hint::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+}
+
+@keyframes clickHintPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 .char,
 .line {
   display: inline-block;
@@ -76,6 +163,19 @@ p {
 }
 
 @media (max-width: 1000px) {
+  .slide-counter {
+    top: 1.5rem;
+    left: 1.5rem;
+    bottom: unset;
+  }
+
+  .click-hint {
+    right: unset;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 1.5rem;
+  }
+
   .slide-title {
     top: 50%;
     left: 50%;

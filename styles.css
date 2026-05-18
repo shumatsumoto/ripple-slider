@@ -180,6 +180,8 @@ p {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    width: calc(100% - 3rem);
+    text-align: center;
   }
 
   .slide-description {

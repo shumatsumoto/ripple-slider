@@ -1,195 +1,190 @@
+:root {
+  --fg: #fff;
+  --fg-dim: rgb(255 255 255 / 0.5);
+  /* WebGL のフォグ色にも使われます */
+  --bg: #0c0c0c;
+  --edge: clamp(2rem, 3.5vw, 3rem);
+  --text-small: 0.7rem;
+  --text-large: clamp(20px, 3.5vw, 40px);
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
-  font-family: "PP Neue Montreal", sans-serif;
-  cursor: none;
-}
-
-.cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: white;
-  mix-blend-mode: difference;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0;
-  transition: width 0.3s ease, height 0.3s ease;
-  will-change: transform;
-}
-
-.cursor.expanded {
-  width: 44px;
-  height: 44px;
+  font-family: "Google Sans Flex", sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
 }
 
 h1 {
-  font-size: clamp(2rem, 4vw, 6rem);
-  font-weight: 500;
-  letter-spacing: -2%;
-  line-height: 1.25;
+  font-size: var(--text-large);
+  font-weight: 350;
+  line-height: 1.2;
 }
 
 p {
-  font-weight: 500;
+  font-size: var(--text-small);
+  font-weight: 400;
+  line-height: 1.35;
+  text-transform: uppercase;
 }
+
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 2000px;
+  margin-inline: auto;
+  padding: var(--edge);
+}
+
+/* ---------- Slider ---------- */
 
 .slider {
   position: fixed;
+  inset: 0;
   width: 100%;
   height: 100svh;
-  background: #e0ddcf;
   overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.slider.is-clickable {
+  cursor: pointer;
+}
+
+.slider.is-expanded {
+  cursor: zoom-out;
+}
+
+.slider.is-dragging {
+  cursor: grabbing;
 }
 
 .slider canvas {
   display: block;
-  width: 100%;
-  height: 100%;
 }
 
-.slide-content {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  mix-blend-mode: difference;
-  user-select: none;
-  pointer-events: none;
-  z-index: 2;
-}
+/* ---------- Mask reveal ---------- */
 
-.slide-title {
-  position: absolute;
-  top: 50%;
-  left: 3rem;
-  transform: translate(0%, -50%);
-  width: max-content;
-  color: #fff;
-}
-
-.slide-description {
-  position: absolute;
-  top: 50%;
-  right: 3rem;
-  transform: translate(0%, -50%);
-  width: 15%;
-  min-width: 250px;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  z-index: 2;
-}
-
-.vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.slider:hover .vignette {
-  opacity: 1;
-}
-
-.slide-counter {
-  position: absolute;
-  bottom: 2.5rem;
-  left: 3rem;
-  color: white;
-  mix-blend-mode: difference;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  z-index: 10;
-  pointer-events: none;
-  user-select: none;
+.slide-info p,
+.detail-close {
   overflow: hidden;
 }
 
-.counter-current {
-  display: inline-block;
+.slide-info p > span,
+.detail-close > span {
+  display: block;
+  will-change: transform;
 }
 
-.click-hint {
-  position: absolute;
-  bottom: 2.5rem;
-  right: 3rem;
-  color: white;
-  mix-blend-mode: difference;
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+.line-mask {
+  overflow: hidden;
+}
+
+/* ---------- Info bar ---------- */
+
+.slide-info {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
   z-index: 10;
   pointer-events: none;
-  user-select: none;
-  display: flex;
+}
+
+.slide-info .container {
+  padding: calc(var(--edge) - 1rem);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 0.6rem;
-  animation: clickHintPulse 2s ease-in-out infinite;
 }
 
-.click-hint::before {
-  content: '';
-  display: block;
-  width: 18px;
-  height: 1px;
-  background: currentColor;
+.slide-info p {
+  margin: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
-@keyframes clickHintPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+.slide-info p:nth-child(2) {
+  color: var(--fg-dim);
 }
 
-.char,
-.line {
-  display: inline-block;
+.info-count {
+  justify-self: end;
+}
+
+/* ---------- Detail (expanded) ---------- */
+
+.slide-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+
+.slide-detail .container {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  padding-bottom: calc(var(--edge) + 3rem);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: end;
+}
+
+.detail-title {
+  max-width: 14ch;
+}
+
+.detail-description {
+  justify-self: end;
+  max-width: 340px;
+  text-transform: none;
+  font-size: 0.85rem;
+}
+
+.detail-close {
+  position: absolute;
+  top: var(--edge);
+  right: var(--edge);
+  color: var(--fg-dim);
+}
+
+.slide-detail .line,
+.slide-detail .char,
+.slide-detail .word {
   will-change: transform;
-  position: relative;
 }
 
 @media (max-width: 1000px) {
-  .slide-counter {
-    top: 1.5rem;
-    left: 1.5rem;
-    bottom: unset;
+  .slide-info .container {
+    grid-template-columns: 1fr auto;
   }
 
-  .click-hint {
-    right: unset;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 1.5rem;
+  .slide-info p:nth-child(2) {
+    display: none;
   }
 
-  .slide-title {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(100% - 3rem);
-    text-align: center;
+  .slide-detail .container {
+    grid-template-columns: 1fr;
   }
 
-  .slide-description {
-    width: 75%;
-    text-align: center;
-    top: unset;
-    bottom: 5%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  .detail-description {
+    justify-self: start;
   }
 }

@@ -67,7 +67,9 @@ export const config = {
   },
   grain: { amount: 0.135, blend: 0.1 },
   pointer: { parallax: 0.5, vertical: 0.6, image: 0.008, ease: 3 },
-  expand: { duration: 1.2, ease: "power4.inOut", zoom: 1.4 },
+  // maxHeight: 展開時の高さの上限（画面の高さに対する割合。1 = 100%）
+  // zoom: 展開時の画像の拡大率。1 より大きいと画像が切り取られます
+  expand: { duration: 1.2, ease: "power4.inOut", zoom: 1, maxHeight: 1 },
   intro: {
     delay: 0.3,
     duration: 5,

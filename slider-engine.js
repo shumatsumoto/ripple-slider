@@ -390,8 +390,11 @@ function mount(container, config, { slides, onChange, onExpand, onOpen }) {
   function placeSlides() {
     const { slideWidth, slideHeight, step, pad } = layout;
     const { lerp } = THREE.MathUtils;
-    const width = lerp(slideWidth, view.width, expansion.value);
-    const height = lerp(slideHeight, view.height, expansion.value);
+    // 展開時は画像の比率を保ったまま画面内に収める（高さは最大 expand.maxHeight）
+    const aspect = slideWidth / slideHeight;
+    const fullHeight = Math.min(view.height * config.expand.maxHeight, view.width / aspect);
+    const width = lerp(slideWidth, fullHeight * aspect, expansion.value);
+    const height = lerp(slideHeight, fullHeight, expansion.value);
     const push = (width - slideWidth) / 2;
 
     meshes.forEach((mesh, i) => {
